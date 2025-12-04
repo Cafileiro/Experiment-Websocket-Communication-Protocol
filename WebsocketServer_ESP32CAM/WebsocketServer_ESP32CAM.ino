@@ -56,11 +56,7 @@ void handleJpgHi()  //permite enviar la resolucion de imagen alta
   serveJpg();
 }
 
-void setup() {
-  Serial.begin(115200);
-  delay(100);
-  Serial.println();
-
+bool confAndCheckCamera(){
   {
     using namespace esp32cam;
     Config cfg;
@@ -69,9 +65,17 @@ void setup() {
     cfg.setBufferCount(2);
     cfg.setJpeg(80);
 
-    bool ok = Camera.begin(cfg);
-    Serial.println(ok ? "CAMARA OK" : "CAMARA FAIL");
+    return Camera.begin(cfg);
   }
+
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(100);
+  Serial.println();
+
+  if(confAndCheckCamera() == false){Serial.println("Camera fail")}else{Serial.println("Camera OK")}
 
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
