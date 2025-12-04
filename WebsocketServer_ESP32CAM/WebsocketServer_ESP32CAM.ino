@@ -58,7 +58,7 @@ void setup() {
   }
 
 
-  Serial.print(WiFi.localIP());
+  Serial.println(WiFi.localIP());
 
   ws.onEvent(onWsEvent);
   server.addHandler(&ws);
