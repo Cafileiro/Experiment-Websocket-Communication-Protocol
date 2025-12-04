@@ -3,14 +3,19 @@ const WebSocket = require('ws');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const FormData = require('form-data');
+const fetch = require('node-fetch');
 
+// Configuration
 const ESP_IP = '192.168.1.41';
 const ESP_WS = `ws://${ESP_IP}/ws`;
-
+const PY_SERVER = 'http://localhost:5000/process';
 // Setup simple Express server to serve last.jpg and a small viewer page
 const app = express();
 const PORT = 3000;
 const outfile = path.join(__dirname, 'last.jpg');
+
+let busy = false;
 
 app.get('/', (req, res) => {
   res.send(`
@@ -48,15 +53,24 @@ ws.on('open', () => {
   console.log('Connected to ESP WebSocket', ESP_WS);
 });
 
-ws.on('message', (data) => {
-  // data is a Buffer containing the JPEG bytes (binary)
-  if (Buffer.isBuffer(data)) {
-    fs.writeFile(outfile, data, (err) => {
-      if (err) console.error('Error saving image', err);
-      else console.log('Saved', outfile, 'size', data.length);
-    });
-  } else {
-    console.log('Received non-binary message:', data.toString());
+ws.on('message', async (data) => {
+  if (!Buffer.isBuffer(data)) return;
+  if (busy) return console.log('Servidor ocupado, descartando frame');
+
+  busy = true;
+  try {
+    const form = new FormData();
+    form.append('image', data, { filename: 'last.jpg', contentType: 'image/jpeg' });
+
+    const res = await fetch(PY_SERVER, { method: 'POST', body: form, timeout: 10000 });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const buf = await res.buffer();
+    fs.writeFileSync(outfile, buf);
+    console.log('Imagen procesada guardada, bytes=', buf.length);
+  } catch (err) {
+    console.error('Error al procesar:', err.message || err);
+  } finally {
+    busy = false;
   }
 });
 
