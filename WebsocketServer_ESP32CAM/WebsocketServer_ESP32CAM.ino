@@ -2,12 +2,13 @@
 #include <esp32cam.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <esp_camera.h>
 
-const char* WIFI_SSID = "LMAO";
+const char* WIFI_SSID = "LMAO"; 
 const char* WIFI_PASS = "LOL";
 
-AsyncWebSocket server(80); //servidor en el puerto 80
-AsyncWebServer ws("/ws");
+AsyncWebSocket ws("/ws"); 
+AsyncWebServer server(80);//servidor en el puerto 80
 
 static auto loRes = esp32cam::Resolution::find(320, 240);  //baja resolucion
 static auto hiRes = esp32cam::Resolution::find(800, 600);  //alta resolucion
@@ -26,34 +27,6 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client,
     // If you want to receive commands from the Node server you can parse them here.
     Serial.printf("Received data from client %u, len=%u\n", client->id(), (unsigned)len);
   }
-}
-
-
-void checkCamera()  //checkCamera
-{
-  auto frame = esp32cam::capture();
-  if (frame == nullptr) {
-    Serial.println("CAPTURE FAIL");
-    return;
-  }
-  Serial.printf("CAPTURE OK %dx%d %db\n", frame->getWidth(), frame->getHeight(),
-                static_cast<int>(frame->size()));
-}
-
-void handleJpgLo()  //permite enviar la resolucion de imagen baja
-{
-  if (!esp32cam::Camera.changeResolution(loRes)) {
-    Serial.println("SET-LO-RES FAIL");
-  }
-  serveJpg();
-}
-
-void handleJpgHi()  //permite enviar la resolucion de imagen alta
-{
-  if (!esp32cam::Camera.changeResolution(hiRes)) {
-    Serial.println("SET-HI-RES FAIL");
-  }
-  serveJpg();
 }
 
 bool confAndCheckCamera(){
@@ -75,8 +48,8 @@ void setup() {
   delay(100);
   Serial.println();
 
-  if(confAndCheckCamera() == false){Serial.println("Camera fail")}else{Serial.println("Camera OK")}
-
+  if(confAndCheckCamera() == false){Serial.println("Camera fail");}else{Serial.println("Camera OK");}
+  // Wifi
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASS);  //nos conectamos a la red wifi
@@ -84,20 +57,34 @@ void setup() {
     delay(500);
   }
 
-  Serial.print("http://");
-  Serial.print(WiFi.localIP());
-  Serial.println("/cam-lo.jpg");  //para conectarnos IP res baja
 
-  Serial.print("http://");
   Serial.print(WiFi.localIP());
-  Serial.println("/cam-hi.jpg");  //para conectarnos IP res alta
 
-  server.on("/cam-lo.jpg", handleJpgLo);  //enviamos al servidor
-  server.on("/cam-hi.jpg", handleJpgHi);
+  ws.onEvent(onWsEvent);
+  server.addHandler(&ws);
+
 
   server.begin();
+  Serial.println("Server started");
 }
 
 void loop() {
-  server.handleClient();
+  unsigned long now = millis();
+  if (now - lastCapture >= CAPTURE_INTERVAL) {
+    lastCapture = now;
+    if (ws.count() > 0) { // only capture if clients connected
+      camera_fb_t * fb = esp_camera_fb_get();
+      if (!fb) {
+        Serial.println("Camera capture failed");
+      }
+
+      // Send JPEG binary to all websocket clients
+      // Note: AsyncWebSocket::binaryAll accepts uint8_t*, size_t
+      ws.binaryAll(fb->buf, fb->len);
+
+      esp_camera_fb_return(fb);
+      Serial.printf("Sent frame, %u bytes, clients=%d\n", (unsigned)fb->len, ws.count());
+    }
+  }
+  // nothing else needed in loop for Async server
 }
