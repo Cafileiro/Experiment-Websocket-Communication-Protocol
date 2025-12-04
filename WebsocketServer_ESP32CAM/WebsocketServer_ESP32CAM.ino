@@ -10,6 +10,9 @@ const char* WIFI_PASS = "LOL";
 AsyncWebSocket ws("/ws"); 
 AsyncWebServer server(80);
 
+static auto loRes = esp32cam::Resolution::find(320, 240); 
+static auto hiRes = esp32cam::Resolution::find(800, 600);  
+
 const unsigned long CAPTURE_INTERVAL = 1000;  
 
 unsigned long lastCapture = 0;
@@ -30,6 +33,8 @@ bool confAndCheckCamera(){
   {
     using namespace esp32cam;
     Config cfg;
+    cfg.setPins(pins::AiThinker);
+    cfg.setResolution(hiRes);
     cfg.setBufferCount(2);
     cfg.setJpeg(80);
 
