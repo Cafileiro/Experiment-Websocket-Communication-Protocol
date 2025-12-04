@@ -8,10 +8,7 @@ const char* WIFI_SSID = "LMAO";
 const char* WIFI_PASS = "LOL";
 
 AsyncWebSocket ws("/ws"); 
-AsyncWebServer server(80);//servidor en el puerto 80
-
-static auto loRes = esp32cam::Resolution::find(320, 240);  //baja resolucion
-static auto hiRes = esp32cam::Resolution::find(800, 600);  //alta resolucion
+AsyncWebServer server(80);
 
 const unsigned long CAPTURE_INTERVAL = 1000;  
 
@@ -33,8 +30,6 @@ bool confAndCheckCamera(){
   {
     using namespace esp32cam;
     Config cfg;
-    cfg.setPins(pins::AiThinker);
-    cfg.setResolution(hiRes);
     cfg.setBufferCount(2);
     cfg.setJpeg(80);
 
@@ -52,7 +47,7 @@ void setup() {
   // Wifi
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);  //nos conectamos a la red wifi
+  WiFi.begin(WIFI_SSID, WIFI_PASS);  
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
   }
@@ -78,13 +73,10 @@ void loop() {
         Serial.println("Camera capture failed");
       }
 
-      // Send JPEG binary to all websocket clients
-      // Note: AsyncWebSocket::binaryAll accepts uint8_t*, size_t
       ws.binaryAll(fb->buf, fb->len);
 
       esp_camera_fb_return(fb);
       Serial.printf("Sent frame, %u bytes, clients=%d\n", (unsigned)fb->len, ws.count());
     }
   }
-  // nothing else needed in loop for Async server
 }
