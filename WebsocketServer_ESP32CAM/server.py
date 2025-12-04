@@ -14,7 +14,7 @@ executor = ThreadPoolExecutor(max_workers=WORKERS)
 
 def process_image_bytes(jpeg_bytes: bytes):
     #TODO: Implement image processing logic here
-    pass
+    return jpeg_bytes
 
 @app.post("/process", response_class=Response, responses={200: {"content": {"image/jpeg": {}}}})
 async def process(image: UploadFile = File(...)):
@@ -36,7 +36,7 @@ async def process(image: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Internal error: " + str(e))
 
-    return Response() #TODO: return an order depend on processed image bytes in processed
+    return Response(content=processed, media_type="image/jpeg")
 
 if __name__ == "__main__":
     # For development: uvicorn server:app --host 0.0.0.0 --port 5000
