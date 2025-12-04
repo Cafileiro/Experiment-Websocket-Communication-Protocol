@@ -18,3 +18,8 @@ COPY server.py .
 
 EXPOSE 5000
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "5000"]
+
+# To build the Docker image, use:
+# docker build -t imgproc:latest .
+# To run the Docker container, use:
+# docker run --rm -p 5000:5000 --name imgproc imgproc:latest
