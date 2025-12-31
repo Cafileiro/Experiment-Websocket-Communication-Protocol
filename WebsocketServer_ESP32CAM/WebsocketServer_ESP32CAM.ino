@@ -4,8 +4,8 @@
 #include <ESPAsyncWebServer.h>
 #include <esp_camera.h>
 
-const char* WIFI_SSID = "LMAO"; 
-const char* WIFI_PASS = "LOL";
+const char* WIFI_SSID = process.env.Wifi_SSID; // your network SSID (name) 
+const char* WIFI_PASS = process.env.Wifi_Password; // your network password
 
 AsyncWebSocket ws("/ws"); 
 AsyncWebServer server(80);

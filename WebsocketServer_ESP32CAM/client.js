@@ -7,12 +7,12 @@ const FormData = require('form-data');
 const fetch = require('node-fetch');
 
 // Configuration
-const ESP_IP = '192.168.1.41';
+const ESP_IP = process.env.ESP_IP ;
 const ESP_WS = `ws://${ESP_IP}/ws`;
-const PY_SERVER = 'http://localhost:5000/process';
+const PY_SERVER = process.env.PY_SERVER;
 // Setup simple Express server to serve last.jpg and a small viewer page
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT;
 const outfile = path.join(__dirname, 'last.jpg');
 
 let busy = false;
